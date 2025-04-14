@@ -59,7 +59,7 @@
             " onmouseover="this.style.transform='scale(1.1)'" 
                onmouseout="this.style.transform='scale(1)'"
                onmousedown="this.style.transform='scale(0.95)'">Start Over</button>
-            <button onclick="window.location.href='homepage.html'" class="control-btn" style="
+            <button onclick="window.location.href='index.html'" class="control-btn" style="
                 background: linear-gradient(45deg, #2195f33d, #19d2c922);
                 border: none;
                 color: white;
@@ -97,22 +97,54 @@
     </div>
 </div>
 <script>
-    const words = ['JAVASCRIPT', 'HANGMAN', 'GAME', 'PROGRAMMING'];
+    const words = ['CAT', 'APPLE', 'WINDOW', 'COMPUTER', 'SCHOOL', 'SNOW', 'RAIN', 'DOG', 'ART', 'FOOD'];
+    const hints = ['A furry pet that meows', 'A fruit that keeps the doctor away', 'You look through it', 'An electronic device', 'A place of learning', 'White precipitation', 'Water from the sky', 'A loyal furry friend', 'Creative expression', 'You eat it'];
     let word = words[Math.floor(Math.random() * words.length)];
+    let currentHint = hints[words.indexOf(word)];
     let guessed = new Array(word.length).fill('_');
     
     let mistakes = 0;
     let maxMistakes = 6;
 
-    // Set text color to white for the whole container
-    document.querySelector('.hangman-container').style.color = 'white';
+    // Add hint button to game controls
+    const hintButton = document.createElement('button');
+    hintButton.textContent = 'Hint';
+    hintButton.style.cssText = `
+        background: linear-gradient(45deg, #ff980047, #ff5e0047);
+        border: none;
+        color: white;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        animation: pulse 2s infinite;
+        animation-delay: 2s;
+    `;
+    hintButton.onclick = showHint;
+    document.querySelector('.game-controls').appendChild(hintButton);
 
-    // Set canvas drawing style to white
+    function showHint() {
+        const hintBox = document.createElement('div');
+        hintBox.style.cssText = `
+            position: fixed;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 5px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+        `;
+        hintBox.textContent = currentHint;
+        document.body.appendChild(hintBox);
+        setTimeout(() => hintBox.remove(), 3000);
+    }
+
+    // Rest of your existing code remains the same
+    document.querySelector('.hangman-container').style.color = 'white';
     const canvas = document.getElementById('hangmanCanvas');
     const ctx = canvas.getContext('2d');
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
-    // Set button text color to black to ensure visibility
     document.querySelectorAll('button').forEach(btn => btn.style.color = 'white');
 
     function initGame() {
@@ -123,14 +155,16 @@
 
     function startOver() {
         word = words[Math.floor(Math.random() * words.length)];
+        currentHint = hints[words.indexOf(word)];
         guessed = new Array(word.length).fill('_');
         mistakes = 0;
         const ctx = document.getElementById('hangmanCanvas').getContext('2d');
         ctx.clearRect(0, 0, 300, 300);
         ['letterButtons', 'message'].forEach(id => document.getElementById(id)[id === 'letterButtons' ? 'innerHTML' : 'textContent'] = '');
         initGame();
-        }
+    }
 
+    // Rest of your existing functions remain the same
     function displayWord() {
         document.getElementById('wordDisplay').textContent = guessed.join(' ');
     }
@@ -145,6 +179,7 @@
             container.appendChild(button);
         });
     }
+
     function guessLetter(letter) {
         let found = false;
         for(let i = 0; i < word.length; i++) {
@@ -171,7 +206,7 @@
             border: 2px solid #fff;
             border-radius: 10px;
             font-size: 24px;
-            font-family: Georgia, 'Times New Roman', Times, serif
+            font-family: Georgia, 'Times New Roman', Times, serif;
             color: #fff;
             font-weight: bold;
             left: 50%;
@@ -249,5 +284,3 @@
 
     initGame();
 </script>
-</body>
-</html>

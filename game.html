@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <video autoplay muted loop id="myVideo" style="position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; filter: blur(10px);">
+        <source src="hangman.mp4" type="video/mp4">
+</video>
+
+<div class="blurred-background"></div>
+<style>
+    .blurred-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #00000078, #53f8c974, #6070fd66, #5bbdff6c, #00000078);
+        background-size: 400% 400%;
+        animation: gradientMove 15s ease infinite;
+        filter: blur(10px);
+        z-index: -1;
+        opacity: 0.5;
+    }
+
+    @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        25% { background-position: 100% 50%; }
+        50% { background-position: 100% 100%; }
+        75% { background-position: 0% 100%; }
+        100% { background-position: 0% 50%; }
+    }
+    .hangman-container { text-align: center; margin: 30px; }
+    #hangmanCanvas { border: 2px solid #ffffff; width: 400px; height: 400px; }
+    .word-display { font-size: 2.5em; letter-spacing: 15px; margin: 30px; }
+    .letters { margin: 30px; }
+    button { margin: 8px; padding: 15px; font-size: 1.2em; }
+    body { font-family: Georgia, 'Times New Roman', Times, serif; }
+    
+</style>
+<div class="hangman-container">
+    <canvas id="hangmanCanvas" width="300" height="300"></canvas>
+    <div id="wordDisplay" class="word-display"></div>
+    <div class="letters" id="letterButtons"></div>
+    <p id="message"></p>
+    <div class="game-controls">
+        <div style="position: fixed; top: 20px; left: 20px;">
+            <button onclick="location.reload()" style="
+                background: linear-gradient(45deg, #4caf914b, #45a04945);
+                border: none;
+                color: white;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+                transform: scale(1);
+                animation: pulse 2s infinite;
+            " onmouseover="this.style.transform='scale(1.1)'" 
+               onmouseout="this.style.transform='scale(1)'"
+               onmousedown="this.style.transform='scale(0.95)'">Start Over</button>
+            <button onclick="window.location.href='homepage.html'" class="control-btn" style="
+                background: linear-gradient(45deg, #2195f33d, #19d2c922);
+                border: none;
+                color: white;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+                transform: scale(1);
+                animation: pulse 2s infinite;
+                animation-delay: 1s;
+            " onmouseover="this.style.transform='scale(1.1)'"
+               onmouseout="this.style.transform='scale(1)'"
+               onmousedown="this.style.transform='scale(0.95)'">Back to Main Lobby</button>
+            <style>
+                @keyframes pulse {
+                    0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+                    70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+                    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+                }
+            </style>
+        </div>
+
+        <div id="lives-counter" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        color: white;
+        font-size: 24px;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px 20px;
+        border-radius: 5px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    ">
+        Lives: <span id="lives">6</span>
+    </div>
+    </div>
+</div>
+<script>
+    const words = ['JAVASCRIPT', 'HANGMAN', 'GAME', 'PROGRAMMING'];
+    let word = words[Math.floor(Math.random() * words.length)];
+    let guessed = new Array(word.length).fill('_');
+    
+    let mistakes = 0;
+    let maxMistakes = 6;
+
+    // Set text color to white for the whole container
+    document.querySelector('.hangman-container').style.color = 'white';
+
+    // Set canvas drawing style to white
+    const canvas = document.getElementById('hangmanCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    // Set button text color to black to ensure visibility
+    document.querySelectorAll('button').forEach(btn => btn.style.color = 'white');
+
+    function initGame() {
+        drawGallows();
+        createLetterButtons();
+        displayWord();
+    }
+
+    function startOver() {
+        word = words[Math.floor(Math.random() * words.length)];
+        guessed = new Array(word.length).fill('_');
+        mistakes = 0;
+        const ctx = document.getElementById('hangmanCanvas').getContext('2d');
+        ctx.clearRect(0, 0, 300, 300);
+        ['letterButtons', 'message'].forEach(id => document.getElementById(id)[id === 'letterButtons' ? 'innerHTML' : 'textContent'] = '');
+        initGame();
+        }
+
+    function displayWord() {
+        document.getElementById('wordDisplay').textContent = guessed.join(' ');
+    }
+
+    function createLetterButtons() {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const container = document.getElementById('letterButtons');
+        letters.split('').forEach(letter => {
+            const button = document.createElement('button');
+            button.textContent = letter;
+            button.onclick = () => guessLetter(letter);
+            container.appendChild(button);
+        });
+    }
+    function guessLetter(letter) {
+        let found = false;
+        for(let i = 0; i < word.length; i++) {
+            if(word[i] === letter) {
+                guessed[i] = letter;
+                found = true;
+            }
+        }
+        if(!found) {
+            mistakes++;
+            drawHangman();
+            document.getElementById('lives').textContent = maxMistakes - mistakes;
+        }
+        displayWord();
+        checkGameEnd();
+    }
+
+    function showBouncingMessage(text) {
+        const box = document.createElement('div');
+        box.style.cssText = `
+            position: fixed;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: Georgia, 'Times New Roman', Times, serif
+            color: #fff;
+            font-weight: bold;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            animation: bounce 2s infinite;
+        `;
+        box.textContent = text;
+        document.body.appendChild(box);
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes bounce {
+                0%, 100% { transform: translate(-50%, -50%) scale(1); }
+                50% { transform: translate(-50%, -60%) scale(1.1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function checkGameEnd() {
+        if(!guessed.includes('_')) {
+            showBouncingMessage('You Win!');
+            document.getElementById('message').textContent = 'You Win!';
+        } else if(mistakes >= maxMistakes) {
+            showBouncingMessage('Game Over!');
+            document.getElementById('message').textContent = 'Game Over!';
+        }
+    }
+
+    function drawGallows() {
+        const canvas = document.getElementById('hangmanCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        ctx.moveTo(50, 250);
+        ctx.lineTo(150, 250);
+        ctx.moveTo(100, 250);
+        ctx.lineTo(100, 50);
+        ctx.lineTo(200, 50);
+        ctx.lineTo(200, 80);
+        ctx.stroke();
+    }
+
+    function drawHangman() {
+        const canvas = document.getElementById('hangmanCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.beginPath();
+        switch(mistakes) {
+            case 1: // Head
+                ctx.arc(200, 100, 20, 0, Math.PI * 2);
+                break;
+            case 2: // Body
+                ctx.moveTo(200, 120);
+                ctx.lineTo(200, 180);
+                break;
+            case 3: // Left arm
+                ctx.moveTo(200, 140);
+                ctx.lineTo(160, 160);
+                break;
+            case 4: // Right arm
+                ctx.moveTo(200, 140);
+                ctx.lineTo(240, 160);
+                break;
+            case 5: // Left leg
+                ctx.moveTo(200, 180);
+                ctx.lineTo(160, 220);
+                break;
+            case 6: // Right leg
+                ctx.moveTo(200, 180);
+                ctx.lineTo(240, 220);
+                break;
+        }
+        ctx.stroke();
+    }
+
+    initGame();
+</script>
+</body>
+</html>

@@ -97,7 +97,7 @@
     </div>
 </div>
 <script>
-    const words = ['CAT', 'APPLE', 'WINDOW', 'COMPUTER', 'SCHOOL', 'SNOW', 'RAIN', 'DOG', 'ART', 'FOOD', 'BOOK', 'SUN', 'MOON', 'TREE', 'HOUSE', 'BIRD', 'FISH', 'STAR', 'BALL', 'CAR'];
+    const words = ['CAT', 'APPLE', 'WINDOW', 'COMPUTER', 'SCHOOL', 'SNOW', 'RAIN', 'DOG', 'ART', 'FOOD'];
     const hints = ['A furry pet that meows', 'A fruit that keeps the doctor away', 'You look through it', 'An electronic device', 'A place of learning', 'White precipitation', 'Water from the sky', 'A loyal furry friend', 'Creative expression', 'You eat it'];
     let word = words[Math.floor(Math.random() * words.length)];
     let currentHint = hints[words.indexOf(word)];
@@ -181,6 +181,7 @@
     }
 
     function guessLetter(letter) {
+        if (mistakes >= maxMistakes) return; 
         let found = false;
         for(let i = 0; i < word.length; i++) {
             if(word[i] === letter) {
@@ -191,18 +192,23 @@
         if(!found) {
             mistakes++;
             drawHangman();
-            document.getElementById('lives').textContent = maxMistakes - mistakes;
+            document.getElementById('lives').textContent = Math.max(0, maxMistakes - mistakes);
         }
         displayWord();
         checkGameEnd();
     }
 
     function showBouncingMessage(text) {
+        const existingMessage = document.querySelector('.bouncing-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
         const box = document.createElement('div');
+        box.className = 'bouncing-message';
         box.style.cssText = `
             position: fixed;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
             border: 2px solid #fff;
             border-radius: 10px;
             font-size: 24px;
